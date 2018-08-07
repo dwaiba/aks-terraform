@@ -63,12 +63,11 @@ resource "null_resource" "provision" {
   provisioner "local-exec" {
     command = "kubectl config use-context ${azurerm_kubernetes_cluster.k8s.name}"
   }
-
-  /**
-                  provisioner "local-exec" {
+                  
+  provisioner "local-exec" {
                     command = "echo "$(terraform output kube_config)" > ~/.kube/azurek8s && export KUBECONFIG=~/.kube/azurek8s"
-                  } 
-                **/
+  } 
+                
   provisioner "local-exec" {
     command = "helm init"
   }
