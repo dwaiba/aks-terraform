@@ -1,22 +1,23 @@
 Master:
   InstallPlugins:
-    - kubernetes:1.12.0
+    - kubernetes:1.12.1
     - workflow-aggregator:2.5
-    - workflow-job:2.21
+    - workflow-job:2.23
     - credentials-binding:1.16
     - git:3.9.1
     - google-oauth-plugin:0.6
     - google-source-plugin:0.3
     - ansicolor:0.5.2
     - custom-tools-plugin:0.5
-    - envinject:2.1.5
     - git-parameter:0.9.3
     - sonar:2.8
-    - startup-trigger-plugin:2.8
-    - timestamper:1.8.9
-    - analysis-core:1.92
-    - dependency-check-jenkins-plugin:3.0.2
+    - startup-trigger-plugin:2.9.3
+    - timestamper:1.8.10
+    - analysis-core:1.95
+    - dependency-check-jenkins-plugin:3.3.1
     - maven-plugin:3.1.2
+    - pipeline-github-lib:1.0
+    - blueocean:1.7.1
   Cpu: "1"
   Memory: "3500Mi"
   JavaOpts: "-Xms3500m -Xmx3500m"
