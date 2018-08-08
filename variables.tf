@@ -22,10 +22,11 @@ variable "client_id" {}
 
 variable "client_secret" {}
 
-
 variable "cluster_name" {}
 
 variable "dns_prefix" {}
+variable "azure_container_registry_name" {}
+
 /**
 variable "cluster_name" {
   default = "hclaks"
@@ -43,14 +44,17 @@ variable "admin_username" {
   default = "aksadmin"
 }
 
-variable "agent_count" {
-  default = "3"
+variable "agent_count" {}
+
+variable "azurek8s_sku" {
+  default = "Standard_F2s"
 }
 
 variable "resource_storage_acct" {
   default = "acisa12345"
 }
 
+/**
 variable "resource_aci-dev-share" {
   default = "aci-dev-share"
 }
@@ -62,7 +66,7 @@ variable "resource_aci-hw" {
 variable "resource_dns_aci-label" {
   default = "aci-dev-hw"
 }
-
+**/
 locals {
   username = "clusterUser_${var.cluster_name}_{$var.cluster_name}"
 }

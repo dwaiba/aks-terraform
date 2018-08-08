@@ -8,6 +8,7 @@ resource "azurerm_kubernetes_cluster" "k8s" {
   location            = "${azurerm_resource_group.k8s.location}"
   resource_group_name = "${azurerm_resource_group.k8s.name}"
   dns_prefix          = "${var.dns_prefix}"
+  kubernetes_version  = "1.10.6"
 
   linux_profile {
     admin_username = "${var.admin_username}"
@@ -20,7 +21,7 @@ resource "azurerm_kubernetes_cluster" "k8s" {
   agent_pool_profile {
     name            = "default"
     count           = "${var.agent_count}"
-    vm_size         = "Standard_F2s"
+    vm_size         = "${var.azurek8s_sku}"
     os_type         = "Linux"
     os_disk_size_gb = 30
   }
@@ -29,6 +30,25 @@ resource "azurerm_kubernetes_cluster" "k8s" {
     client_id     = "${var.client_id}"
     client_secret = "${var.client_secret}"
   }
+}
+
+/**
+resource "azurerm_storage_account" "acrstorageacc" {
+  name                     = "${var.resource_storage_acct}"
+  resource_group_name      = "${azurerm_resource_group.k8s.name}"
+  location                 = "${azurerm_resource_group.k8s.location}"
+  account_tier             = "Standard"
+  account_replication_type = "GRS"
+}
+**/
+resource "azurerm_container_registry" "acrtest" {
+  name                = "${var.azure_container_registry_name}"
+  location            = "${azurerm_resource_group.k8s.location}"
+  resource_group_name = "${azurerm_resource_group.k8s.name}"
+  admin_enabled       = true
+  sku                 = "Premium"
+
+  /** storage_account_id  = "${azurerm_storage_account.acrstorageacc.id}" **/
 }
 
 resource "null_resource" "provision" {
@@ -63,13 +83,16 @@ resource "null_resource" "provision" {
   provisioner "local-exec" {
     command = "kubectl config use-context ${azurerm_kubernetes_cluster.k8s.name}"
   }
-                  
+
+
+  /**
+                                      provisioner "local-exec" {
+                                        command = "echo "$(terraform output kube_config)" > ~/.kube/azurek8s && export KUBECONFIG=~/.kube/azurek8s"
+                                      } 
+                                    **/
+
   provisioner "local-exec" {
-                    command = "echo "$(terraform output kube_config)" > ~/.kube/azurek8s && export KUBECONFIG=~/.kube/azurek8s"
-  } 
-                
-  provisioner "local-exec" {
-    command = "helm init"
+    command = "helm init --upgrade"
   }
 
   provisioner "local-exec" {
@@ -91,20 +114,57 @@ resource "null_resource" "provision" {
   }
 
   /**
-            provisioner "local-exec" {
-              command = "kubectl create -f azure-load-balancer.yaml"
-            }
-    **/
+                                provisioner "local-exec" {
+                                  command = "kubectl create -f azure-load-balancer.yaml"
+                                }
+                        **/
+  provisioner "local-exec" {
+    command = "helm repo add azure-samples https://azure-samples.github.io/helm-charts/"
+  }
+
+  provisioner "local-exec" {
+    command = "helm repo update"
+  }
+
   provisioner "local-exec" {
     command = "helm install stable/nginx-ingress --namespace kube-system --set rbac.create=false"
   }
 
   provisioner "local-exec" {
-    command = "helm install azure-samples/aks-helloworld --set title=\"AKS Ingress Demo\" --set serviceName=\"ingress-demo\""
+    command = "helm install azure-samples/aks-helloworld"
   }
 
   provisioner "local-exec" {
-    command = "helm install -n hclaks stable/jenkins -f values.yaml --version 0.16.6 --wait"
+    command = "helm install -n hclaks stable/jenkins -f jenkins-values.yaml --version 0.16.18 --wait"
+
+    timeouts {
+      create = "12m"
+      delete = "12m"
+    }
+  }
+
+  provisioner "local-exec" {
+    command = "wget -qO- https://azuredraft.blob.core.windows.net/draft/draft-v0.15.0-linux-amd64.tar.gz | tar xvz"
+  }
+
+  provisioner "local-exec" {
+    command = "cp linux-amd64/draft /usr/local/bin/draft"
+  }
+
+  provisioner "local-exec" {
+    command = "draft init"
+  }
+
+  provisioner "local-exec" {
+    command = "draft config set registry ${azurerm_container_registry.acrtest.name}.azurecr.io"
+  }
+
+  provisioner "local-exec" {
+    command = "helm repo add brigade https://azure.github.io/brigade"
+  }
+
+  provisioner "local-exec" {
+    command = "helm install brigade/brigade --name brigade-server"
   }
 }
 
@@ -170,3 +230,4 @@ resource "azurerm_container_group" "aci-helloworld" {
   }
 }
 **/
+
